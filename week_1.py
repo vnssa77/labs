@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 
 import utils
 
+np.random.seed(42)
 
 #### ADD YOUR CODE BELOW
 
@@ -61,8 +62,17 @@ def generate_noisy_linear(num_samples, weights, sigma, limits, rng):
     """
     
     # TODO: implement this
-    return None, None
-
+    features_num = len(weights) - 1
+    
+    X = np.random.uniform(low=limits[0], high= limits[1], size = (num_samples, features_num))
+    
+    X = np.c_[np.ones(num_samples), X]
+    
+    weights_reshape = np.reshape(weights, (2,1))
+    error = np.random.normal(0, sigma**2, size = (num_samples, 1))
+    y = np.dot(X, weights_reshape)  + error        
+        
+    return X, y
 
 def plot_noisy_linear_1d(axes, num_samples, weights, sigma, limits, rng):
     """
