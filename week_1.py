@@ -21,7 +21,9 @@ A 4-panel figure, `week_1.pdf`, will be generated so you can check it's doing wh
 want. You should not need to edit the driver code, though you can if you wish.
 """
 
-import sys, os, os.path
+import sys
+import os
+import os.path
 import argparse
 
 import numpy as np
@@ -31,14 +33,15 @@ import matplotlib.pyplot as plt
 import utils
 
 
-#### ADD YOUR CODE BELOW
+# ADD YOUR CODE BELOW
+np.random.seed(42)
 
 # -- Question 1 --
 
 def generate_noisy_linear(num_samples, weights, sigma, limits, rng):
     """
     Draw samples from a linear model with additive Gaussian noise.
-    
+
     # Arguments
         num_samples: number of samples to generate
             (ie, the number of rows in the returned X
@@ -50,7 +53,7 @@ def generate_noisy_linear(num_samples, weights, sigma, limits, rng):
             range of all the input features x_i
         rng: an instance of numpy.random.Generator
             from which to draw random numbers
-    
+
     # Returns
         X: a matrix of sample inputs, where
             the samples are the rows and the
@@ -59,16 +62,23 @@ def generate_noisy_linear(num_samples, weights, sigma, limits, rng):
               num_samples x (len(weights) - 1)
         y: a vector of num_samples output values
     """
-    
+
     # TODO: implement this
-    return None, None
+    num_features = len(weights) - 1
+    errors = np.random.normal(0, sigma**2, size=(num_samples))
+
+    X = np.random.uniform(low=limits[0], high=limits[1], size=(num_samples, num_features))
+    X = np.c_[np.ones(num_samples), X]
+
+    y = np.matmul(X, weights) + errors
+    return X, y
 
 
 def plot_noisy_linear_1d(axes, num_samples, weights, sigma, limits, rng):
     """
     Generate and plot points from a noisy single-feature linear model,
     along with a line showing the true (noiseless) relationship.
-    
+
     # Arguments
         axes: a Matplotlib Axes object into which to plot
         num_samples: number of samples to generate
@@ -81,21 +91,21 @@ def plot_noisy_linear_1d(axes, num_samples, weights, sigma, limits, rng):
             range of all the input features x_i
         rng: an instance of numpy.random.Generator
             from which to draw random numbers
-    
+
     # Returns
         None
     """
-    assert(len(weights)==2)
+    assert (len(weights) == 2)
     X, y = generate_noisy_linear(num_samples, weights, sigma, limits, rng)
-    
+
     # TODO: do the plotting
-    utils.plot_unimplemented ( axes, 'Noisy 1D Linear Model' )
+    utils.plot_unimplemented(axes, 'Noisy 1D Linear Model')
 
 
 def plot_noisy_linear_2d(axes, resolution, weights, sigma, limits, rng):
     """
     Produce a plot illustrating a noisy two-feature linear model.
-    
+
     # Arguments
         axes: a Matplotlib Axes object into which to plot
         resolution: how densely should the model be sampled?
@@ -106,15 +116,15 @@ def plot_noisy_linear_2d(axes, resolution, weights, sigma, limits, rng):
             range of all the input features x_i
         rng: an instance of numpy.random.Generator
             from which to draw random numbers
-    
+
     # Returns
         None
     """
-    assert(len(weights)==3)
-    
+    assert (len(weights) == 3)
+
     # TODO: generate the data
     # TODO: do the plotting
-    utils.plot_unimplemented ( axes, 'Noisy 2D Linear Model' )
+    utils.plot_unimplemented(axes, 'Noisy 2D Linear Model')
 
 
 # -- Question 2 --
@@ -147,7 +157,6 @@ def generate_linearly_separable(num_samples, weights, limits, rng):
     return None, None
 
 
-
 def plot_linearly_separable_2d(axes, num_samples, weights, limits, rng):
     """
     Plot a linearly separable binary data set in a 2d feature space.
@@ -167,11 +176,11 @@ def plot_linearly_separable_2d(axes, num_samples, weights, limits, rng):
     # Returns
         None
     """
-    assert(len(weights)==3)
+    assert (len(weights) == 3)
     X, y = generate_linearly_separable(num_samples, weights, limits, rng)
-    
+
     # TODO: do the plotting
-    utils.plot_unimplemented ( axes, 'Linearly Separable Binary Data' )
+    utils.plot_unimplemented(axes, 'Linearly Separable Binary Data')
 
 
 # -- Question 3 --
@@ -180,7 +189,7 @@ def random_search(function, count, num_samples, limits, rng):
     """
     Randomly sample from a function of `count` features and return
     the best feature vector found.
-    
+
     # Arguments
         function: a function taking a single input array of
             shape (..., count), where the last dimension
@@ -191,11 +200,11 @@ def random_search(function, count, num_samples, limits, rng):
             range of all the input features x_i
         rng: an instance of numpy.random.Generator
             from which to draw random numbers
-    
+
     # Returns
         x: a vector of length count, containing the found features
     """
-    
+
     # TODO: implement this
     return None
 
@@ -204,7 +213,7 @@ def grid_search(function, count, num_divisions, limits):
     """
     Perform a grid search for a function of `count` features and
     return the best feature vector found.
-    
+
     # Arguments
         function: a function taking a single input array of
             shape (..., count), where the last dimension
@@ -214,11 +223,11 @@ def grid_search(function, count, num_divisions, limits):
             dimension (including endpoints)
         limits: a tuple (low, high) specifying the value
             range of all the input features x_i
-    
+
     # Returns
         x: a vector of length count, containing the found features
     """
-    
+
     # TODO: implement this
     return None
 
@@ -248,22 +257,24 @@ def plot_searches_2d(axes, function, limits, resolution,
             from which to draw random numbers
         true_min: an optional (x1, x2) tuple specifying
             the location of the actual function minimum
-            
+
     # Returns
         None
     """
-    
+
     # TODO: implement this
-    utils.plot_unimplemented ( axes, 'Sampling Search' )
+    utils.plot_unimplemented(axes, 'Sampling Search')
 
 
-
-#### TEST DRIVER
+# TEST DRIVER
 
 def process_args():
-    ap = argparse.ArgumentParser(description='week 1 labwork script for COMP0088')
-    ap.add_argument('-s', '--seed', help='seed random number generator', type=int, default=None)
-    ap.add_argument('file', help='name of output file to produce', nargs='?', default='week_1.pdf')
+    ap = argparse.ArgumentParser(
+        description='week 1 labwork script for COMP0088')
+    ap.add_argument(
+        '-s', '--seed', help='seed random number generator', type=int, default=None)
+    ap.add_argument('file', help='name of output file to produce',
+                    nargs='?', default='week_1.pdf')
     return ap.parse_args()
 
 
@@ -272,7 +283,8 @@ def test_func(X):
     Simple example function of 2 variables for
     testing grid & random optimisation.
     """
-    return (X[..., 0]-1)**2 + X[...,1]**2 + 2 * np.abs((X[...,0]-1) * X[...,1])
+    return (X[..., 0]-1)**2 + X[..., 1]**2 + 2 * np.abs((X[..., 0]-1) * X[..., 1])
+
 
 WEIGHTS = np.array([0.5, -0.4, 0.6])
 LIMITS = (-5, 5)
@@ -283,20 +295,22 @@ if __name__ == '__main__':
 
     fig = plt.figure(figsize=(8, 8))
     axs = fig.subplots(nrows=2, ncols=2)
-    
+
     print('Q1: noisy continuous data')
     print('plotting 1D data')
     plot_noisy_linear_1d(axs[0, 0], 50, WEIGHTS[1:], 0.5, LIMITS, rng)
     print('plotting 2D data')
     plot_noisy_linear_2d(axs[0, 1], 100, WEIGHTS, 0.2, LIMITS, rng)
-    
+
     print('\nQ2: binary separable data')
     print('plotting 2D labelled data')
-    plot_linearly_separable_2d(axs[1, 0], num_samples=100, weights=WEIGHTS, limits=LIMITS, rng=rng)
-    
+    plot_linearly_separable_2d(
+        axs[1, 0], num_samples=100, weights=WEIGHTS, limits=LIMITS, rng=rng)
+
     print('\nQ3: searching for a minimiser')
     print('plotting searches')
-    plot_searches_2d(axs[1, 1], test_func, limits=LIMITS, resolution=100, num_divisions=10, num_samples=100, rng=rng, true_min=(1,0))
+    plot_searches_2d(axs[1, 1], test_func, limits=LIMITS, resolution=100,
+                     num_divisions=10, num_samples=100, rng=rng, true_min=(1, 0))
 
     fig.tight_layout(pad=1)
     fig.savefig(args.file)
