@@ -135,6 +135,7 @@ def plot_noisy_linear_2d(axes, resolution, weights, sigma, limits, rng):
     x0 = np.linspace(limits[0], limits[1], resolution)
     x1 = np.linspace(limits[0], limits[1], resolution)
     x0, x1 = np.meshgrid(x0, x1)
+    
 
     from sklearn.linear_model import LinearRegression
 
@@ -142,9 +143,9 @@ def plot_noisy_linear_2d(axes, resolution, weights, sigma, limits, rng):
     
     w1, w2 = model.coef_
     c = model.intercept_
-    print(c)
+
     output = w1*x0 + w2*x1 + c
-    print(w1, w2)
+
     axes.imshow(output,  extent=[np.min(x0), np.max(x0), np.min(x1), np.max(x1)])
     axes.set_title('2D Linear Regression')
     axes.set_xlabel('$x_0$')
@@ -297,10 +298,17 @@ def grid_search(function, count, num_divisions, limits):
         features.append(np.linspace(start=limits[0], stop = limits[1], num = num_divisions, endpoint= True))
         #[:,i] = np.linspace(start=limits[0], stop = limits[1], num = num_divisions, endpoint= True)
     
-    grid = np.meshgrid(*features)
-    print(len(grid))
+    grid = np.array(np.meshgrid(*features))
+    print(grid[0].shape)
     
     y = function(grid)
+    print(grid.shape)
+    
+    argmin1, argmin2 = np.argmin(y, axis=1)
+    print(grid[0][argmin1//count, argmin1%count])
+    print(grid[1][argmin2//count, argmin2%count])
+
+
     return None
 
 
