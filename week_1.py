@@ -129,13 +129,26 @@ def plot_noisy_linear_2d(axes, resolution, weights, sigma, limits, rng):
     # Returns
         None
     """
+    
     X, y = generate_noisy_linear(resolution, weights, sigma, limits, rng)
+    
+    x0 = np.linspace(limits[0], limits[1], resolution)
+    x1 = np.linspace(limits[0], limits[1], resolution)
+    x0, x1 = np.meshgrid(x0, x1)
 
-    # TODO: generate the data
-    # TODO: do the plotting
-    utils.plot_unimplemented(axes, 'Noisy 2D Linear Model')
+    from sklearn.linear_model import LinearRegression
 
-
+    model = LinearRegression().fit(X, y)
+    
+    w1, w2 = model.coef_
+    c = model.intercept_
+    print(c)
+    output = w1*x0 + w2*x1 + c
+    print(w1, w2)
+    axes.imshow(output,  extent=[np.min(x0), np.max(x0), np.min(x1), np.max(x1)])
+    axes.set_title('2D Linear Regression')
+    axes.set_xlabel('$x_0$')
+    axes.set_ylabel('$x_1$')
 # -- Question 2 --
 
 def generate_linearly_separable(num_samples, weights, limits, rng):
@@ -250,7 +263,13 @@ def random_search(function, count, num_samples, limits, rng):
     """
 
     # TODO: implement this
-    return None
+    X = rng.uniform(low=limits[0], high=limits[1], size=(num_samples, count))
+    y = function(X)
+    
+    i = np.argmin(y)
+    print(X[i])
+    
+    return X[i]
 
 
 def grid_search(function, count, num_divisions, limits):
@@ -271,15 +290,24 @@ def grid_search(function, count, num_divisions, limits):
     # Returns
         x: a vector of length count, containing the found features
     """
-
-    # TODO: implement this
+    features = []
+    #np.empty(shape = (num_divisions, count))
+    
+    for i in range(count):
+        features.append(np.linspace(start=limits[0], stop = limits[1], num = num_divisions, endpoint= True))
+        #[:,i] = np.linspace(start=limits[0], stop = limits[1], num = num_divisions, endpoint= True)
+    
+    grid = np.meshgrid(*features)
+    print(len(grid))
+    
+    y = function(grid)
     return None
 
 
 def plot_searches_2d(axes, function, limits, resolution,
                      num_divisions, num_samples, rng, true_min=None):
     """
-    Plot a 2D function aling with minimum values found by
+    Plot a 2D function along with minimum values found by
     grid and random searching.
 
     # Arguments
@@ -307,6 +335,9 @@ def plot_searches_2d(axes, function, limits, resolution,
     """
 
     # TODO: implement this
+    random_search(function, 2, num_samples, limits, rng)
+    grid_search(function, 2, num_divisions, limits)
+    
     utils.plot_unimplemented(axes, 'Sampling Search')
 
 
