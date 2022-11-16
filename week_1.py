@@ -34,7 +34,7 @@ import utils
 
 
 # ADD YOUR CODE BELOW
-np.random.seed(42)
+# np.random.seed(42)
 
 # -- Question 1 --
 
@@ -63,15 +63,15 @@ def generate_noisy_linear(num_samples, weights, sigma, limits, rng):
         y: a vector of num_samples output values
     """
 
-    # TODO: implement this
     num_features = len(weights) - 1
     errors = np.random.normal(0, sigma**2, size=(num_samples))
 
-    X = np.random.uniform(low=limits[0], high=limits[1], size=(num_samples, num_features))
-    X = np.c_[np.ones(num_samples), X]
+    x = rng.uniform(low=limits[0], high=limits[1],
+                    size=(num_samples, num_features))
+    X = np.c_[np.ones(num_samples), x]
 
     y = np.matmul(X, weights) + errors
-    return X, y
+    return x, y
 
 
 def plot_noisy_linear_1d(axes, num_samples, weights, sigma, limits, rng):
@@ -96,10 +96,19 @@ def plot_noisy_linear_1d(axes, num_samples, weights, sigma, limits, rng):
         None
     """
     assert (len(weights) == 2)
-    X, y = generate_noisy_linear(num_samples, weights, sigma, limits, rng)
+    x, y = generate_noisy_linear(num_samples, weights, sigma, limits, rng)
 
     # TODO: do the plotting
-    utils.plot_unimplemented(axes, 'Noisy 1D Linear Model')
+    axes.plot(x, y, marker='o', linestyle=' ', color='red')
+    from sklearn.linear_model import LinearRegression
+
+    model = LinearRegression().fit(x.reshape(-1, 1), y)
+    y_pred = model.predict(x.reshape(-1, 1))
+
+    axes.plot(x, y_pred, marker='', linestyle='-', label='Fitted Line')
+    axes.set_xlabel('$x$')
+    axes.set_ylabel('$y$')
+    axes.set_title('1D Linear Regression')
 
 
 def plot_noisy_linear_2d(axes, resolution, weights, sigma, limits, rng):
@@ -120,7 +129,7 @@ def plot_noisy_linear_2d(axes, resolution, weights, sigma, limits, rng):
     # Returns
         None
     """
-    assert (len(weights) == 3)
+    X, y = generate_noisy_linear(resolution, weights, sigma, limits, rng)
 
     # TODO: generate the data
     # TODO: do the plotting
@@ -154,7 +163,15 @@ def generate_linearly_separable(num_samples, weights, limits, rng):
         y: a vector of num_samples binary labels
     """
     # TODO: implement this
-    return None, None
+    num_features = len(weights) - 1
+    x = rng.uniform(low=limits[0], high=limits[1],
+                    size=(num_samples, num_features))
+
+    X = np.c_[np.ones(num_samples), x]
+
+    y = np.where(np.matmul(X, weights) >= 0, 1, 0)
+
+    return x, y
 
 
 def plot_linearly_separable_2d(axes, num_samples, weights, limits, rng):
@@ -179,8 +196,31 @@ def plot_linearly_separable_2d(axes, num_samples, weights, limits, rng):
     assert (len(weights) == 3)
     X, y = generate_linearly_separable(num_samples, weights, limits, rng)
 
-    # TODO: do the plotting
-    utils.plot_unimplemented(axes, 'Linearly Separable Binary Data')
+    X_1 = X[np.where(y > 0)]
+    X_0 = X[np.where(y == 0)]
+
+    axes.plot(X_1[:, 0], X_1[:, 1], marker='x', linestyle='', c='red')
+    axes.plot(X_0[:, 0], X_0[:, 1], marker='x', linestyle='', c='blue')
+
+    import sklearn.linear_model
+    model = sklearn.linear_model.LogisticRegression()
+    model.fit(X, y)
+
+    b = model.intercept_[0]
+    w1, w2 = model.coef_.T
+    # Calculate the intercept and gradient of the decision boundary.
+    c = -b/w2
+    m = -w1/w2
+
+    # Plot the data and the classification with the decision boundary.
+    xmin, xmax = min(X[:,0]), max(X[:,0])
+    xd = np.array([xmin, xmax])
+    yd = m*xd + c
+    axes.plot(xd, yd, 'k', lw=1, ls='--')
+    
+    
+    
+    #utils.plot_unimplemented(axes, 'Linearly Separable Binary Data')
 
 
 # -- Question 3 --
