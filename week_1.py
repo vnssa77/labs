@@ -199,8 +199,8 @@ def plot_linearly_separable_2d(axes, num_samples, weights, limits, rng):
     X_1 = X[np.where(y > 0)]
     X_0 = X[np.where(y == 0)]
 
-    axes.plot(X_1[:, 0], X_1[:, 1], marker='x', linestyle='', c='red')
-    axes.plot(X_0[:, 0], X_0[:, 1], marker='x', linestyle='', c='blue')
+    axes.plot(X_1[:, 0], X_1[:, 1], marker='x', linestyle='', c='red', label = 'Positive')
+    axes.plot(X_0[:, 0], X_0[:, 1], marker='+', linestyle='', c='blue', label = 'Negative')
 
     import sklearn.linear_model
     model = sklearn.linear_model.LogisticRegression()
@@ -208,6 +208,7 @@ def plot_linearly_separable_2d(axes, num_samples, weights, limits, rng):
 
     b = model.intercept_[0]
     w1, w2 = model.coef_.T
+    
     # Calculate the intercept and gradient of the decision boundary.
     c = -b/w2
     m = -w1/w2
@@ -216,12 +217,15 @@ def plot_linearly_separable_2d(axes, num_samples, weights, limits, rng):
     xmin, xmax = min(X[:,0]), max(X[:,0])
     xd = np.array([xmin, xmax])
     yd = m*xd + c
-    axes.plot(xd, yd, 'k', lw=1, ls='--')
     
-    
-    
-    #utils.plot_unimplemented(axes, 'Linearly Separable Binary Data')
+    point1, point2 = np.mean(xd), np.mean(yd)
 
+    axes.plot(xd, yd, 'k', lw=1, ls='--')
+    axes.arrow(point1, point2, w1[0], w2[0], head_width = 0.1)
+    axes.set_title('Linearly Seperable Binary Data')
+    axes.set_xlabel('$x_0$')
+    axes.set_ylabel('$x_1$')
+    axes.legend()
 
 # -- Question 3 --
 
