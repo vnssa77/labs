@@ -268,7 +268,7 @@ def random_search(function, count, num_samples, limits, rng):
     y = function(X)
     
     i = np.argmin(y)
-    print(X[i])
+    #print(X[i])
     
     return X[i]
 
@@ -291,25 +291,16 @@ def grid_search(function, count, num_divisions, limits):
     # Returns
         x: a vector of length count, containing the found features
     """
-    features = []
-    #np.empty(shape = (num_divisions, count))
     
-    for i in range(count):
-        features.append(np.linspace(start=limits[0], stop = limits[1], num = num_divisions, endpoint= True))
-        #[:,i] = np.linspace(start=limits[0], stop = limits[1], num = num_divisions, endpoint= True)
+    X, y = utils.grid_sample(function, count, num_divisions, limits)
     
-    grid = np.array(np.meshgrid(*features))
-    print(grid[0].shape)
+    y = y.reshape(-1,1)
+    X = X.reshape(-1,2)
+    index = np.argmin(y)
+    x = X[index]
     
-    y = function(grid)
-    print(grid.shape)
-    
-    argmin1, argmin2 = np.argmin(y, axis=1)
-    print(grid[0][argmin1//count, argmin1%count])
-    print(grid[1][argmin2//count, argmin2%count])
 
-
-    return None
+    return x
 
 
 def plot_searches_2d(axes, function, limits, resolution,
@@ -343,11 +334,20 @@ def plot_searches_2d(axes, function, limits, resolution,
     """
 
     # TODO: implement this
-    random_search(function, 2, num_samples, limits, rng)
-    grid_search(function, 2, num_divisions, limits)
+    rndMin = random_search(function, 2, num_samples, limits, rng)
+    gridMin = grid_search(function, 2, num_divisions, limits)
     
-    utils.plot_unimplemented(axes, 'Sampling Search')
-
+    X, y = utils.grid_sample(function, 2, resolution, limits, rng)
+    x0 = X[:,0]
+    x1 = X[:,1]
+    print(np.min(x0), np.max(x0), np.min(x1), np.max(x1))
+    axes.imshow(y,  extent=[np.min(x0), np.max(x0), np.min(x1), np.max(x1)])
+    axes.plot(rndMin[0], rndMin[1], marker = 'x', label = 'Random search minimum')
+    axes.plot(gridMin[0], gridMin[1], marker = '+', label = 'Grid search minimum')
+    if true_min is not None:
+        axes.plot(true_min[0], true_min[1], marker = '.', label = 'True minimum')
+    axes.legend()
+    axes.set_title('Sampling Search')
 
 # TEST DRIVER
 
