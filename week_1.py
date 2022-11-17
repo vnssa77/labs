@@ -64,7 +64,7 @@ def generate_noisy_linear(num_samples, weights, sigma, limits, rng):
     """
 
     num_features = len(weights) - 1
-    errors = np.random.normal(0, sigma**2, size=(num_samples))
+    errors = np.random.normal(0, sigma, size=(num_samples))
 
     x = rng.uniform(low=limits[0], high=limits[1],
                     size=(num_samples, num_features))
