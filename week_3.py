@@ -123,8 +123,101 @@ def decision_node_split(X, y, cls=None, weights=None, min_size=3):
     """
     assert (X.shape[0] == len(y))
 
-    # TODO: implement this
-    return None, None, None, None
+    """  feature = None
+    thresh = None 
+    
+    if cls is None:
+        cls = utils.vote(y)
+    
+    if len(np.delete(y, np.where(y == cls))) == 0:
+        return None, None, None, None
+    else:
+        c1 = utils.vote(np.delete(y, np.where(y == cls)))
+    loss = misclassification(y, cls, weights)
+    gini_loss = utils.gini_impurity(y)
+    split = False
+    
+    for f in range(len(X.T)):
+        
+        tests = np.unique(X[:,f])
+        
+        for t in tests:
+            #print(y[X[:, f] >= t], t)
+            y_pred = y[X[:, f] >= t]
+            
+            if len(y_pred) != 0:
+                cls = utils.vote(y_pred)
+                error = misclassification(y_pred, cls, weights)
+            gini_error = utils.gini_impurity(y_pred)
+            
+            if error < loss and gini_error < gini_loss:
+                split = True
+                loss = error
+                gini_loss = gini_error
+                feature = f
+                thresh = t
+    
+    if split == False or len(X[:,f] >= thresh) < min_size:
+        return None, None, None, None
+    else: 
+        return feature, thresh, cls, c1   
+    """
+    if len(y) < min_size * 2:
+        return None, None, None, None
+
+    if cls is None:
+        cls = utils.vote(y)
+
+    if weights is None:
+        weights = np.ones(len(y))/len(y)
+
+    g = misclassification(y, cls=cls, weights=weights)
+    if g == 0:
+        return None, None, None, None
+
+    best_feat, best_thresh = None, None
+    best_c0, best_c1 = None, None
+    best_improvement = 0
+
+    for feat in range(X.shape[-1]):
+        for thresh in X[:, feat]:
+            set1 = X[:, feat] >= thresh
+            set0 = ~set1
+
+            if (np.sum(set0) < min_size) or (np.sum(set1) < min_size):
+                continue
+
+            y0 = y[set0]
+            y1 = y[set1]
+
+            w0 = weights[set0]
+            w1 = weights[set1]
+
+            cc0 = np.unique(y0)
+            cc1 = np.unique(y1)
+
+            gg0 = [misclassification(y0, cls=cc, weights=w0) for cc in cc0]
+            gg1 = [misclassification(y1, cls=cc, weights=w1) for cc in cc1]
+
+            c0 = cc0[np.argmin(gg0)]
+            c1 = cc1[np.argmin(gg1)]
+
+            g0 = np.min(gg0)
+            g1 = np.min(gg1)
+
+            improvement = g - (g0 + g1)
+
+            if improvement > best_improvement:
+                best_feat = feat
+                best_thresh = thresh
+                best_improvement = improvement
+                best_c0 = c0
+                best_c1 = c1
+
+    if best_feat is None:
+        return None, None, None, None
+
+    return best_feat, best_thresh, best_c0, best_c1
 
 
 def decision_tree_train(X, y, cls=None, weights=None,
@@ -157,9 +250,63 @@ def decision_tree_train(X, y, cls=None, weights=None,
             'above' : a nested tree for when feature >= thresh (decision)
     """
     # TODO: implement this
-    return None
 
+    """     data = X
+        labels = y
+        pred = cls
+        tree = dict()
+        
+        while depth <= max_depth:
+            subtree = {}
+            feature, thresh, c0, c1 = decision_node_split(data, labels, pred, weights, min_size)
+            
+            if feature is not None:
+                depth += 1
+                X_above = data[data[:,feature] >= thresh]
+                X_below = data[data[:,feature] < thresh]
+                y_above = labels[data[:,feature] >= thresh]
+                y_below = labels[data[:,feature] < thresh]
+                
+                
+                subtree["kind"] = 'decision'
+                subtree["feature"] = feature
+                subtree['thresh'] = thresh
+                subtree['below'] = decision_tree_train(X_below, y_below, c0, weights, min_size, depth, max_depth)
+                subtree['above'] = decision_tree_train(X_above, y_above, c1, weights, min_size, depth, max_depth)
+            else:
+                depth+=1
+                subtree['kind'] = 'leaf'
+                subtree['class'] = pred
+                
+        return subtree """
+    if cls is None:
+        cls = utils.vote(y)
 
+    if depth == max_depth:
+        return {'kind': 'leaf', 'class': cls}
+
+    feat, thresh, cls0, cls1 = decision_node_split(
+        X, y, cls=cls, weights=weights, min_size=min_size)
+
+    if feat is None:
+        return {'kind': 'leaf', 'class': cls}
+
+    set1 = X[:, feat] >= thresh
+    set0 = ~set1
+
+    return {'kind': 'decision',
+            'feature': feat,
+            'thresh': thresh,
+            'above': decision_tree_train(X[set1, :], y[set1], cls1, None if weights is None else weights[set1], min_size, depth+1, max_depth),
+            'below': decision_tree_train(X[set0, :], y[set0], cls0, None if weights is None else weights[set0], min_size, depth+1, max_depth)}
+
+def predict(tree, x):
+        while True:
+            if tree['kind'] == 'leaf':
+                return tree['class']
+            
+            tree = tree['above'] if x[tree['feature']] >= tree['thresh'] else tree['below']
+            
 def decision_tree_predict(tree, X):
     """
     Predict labels for test data using a fitted decision tree.
@@ -172,8 +319,8 @@ def decision_tree_predict(tree, X):
     # Returns
         y: the predicted labels
     """
-    # TODO: implement this
-    return None
+           
+    return np.array([predict(tree, X[i,:]) for i in range(len(X))])
 
 
 # -- Question 3 --
@@ -189,7 +336,8 @@ def random_forest_train(X, y, k, rng, min_size=3, max_depth=10):
             samples, must be same length as number of rows in X
         k: the number of trees in the forest
         rng: an instance of numpy.random.Generator
-            from which to draw random numbers        min_size: don't create child nodes smaller than this
+            from which to draw random numbers        
+        min_size: don't create child nodes smaller than this
         max_depth: maximum tree depth
 
     # Returns:
@@ -197,7 +345,16 @@ def random_forest_train(X, y, k, rng, min_size=3, max_depth=10):
     """
 
     # TODO: implement this
-    return None
+    forest = []
+    for i in range(k):
+        indices = rng.choice(np.arange(len(X)), size = len(X))
+        
+        samplesX = X[indices,:]
+        samplesY = y[indices]
+        
+        forest.append(decision_tree_train(samplesX, samplesY, None, None, min_size, 0, max_depth))
+    
+    return forest
 
 
 def random_forest_predict(forest, X):
@@ -213,8 +370,10 @@ def random_forest_predict(forest, X):
     # Returns
         y: the predicted labels
     """
-    # TODO: implement this
-    return None
+    
+    y = np.array([decision_tree_predict(tree, X) for tree in forest])
+    
+    return np.array([utils.vote(y[:,i]) for i in range(y.shape[1])])
 
 
 # -- Question 4 --
@@ -241,7 +400,38 @@ def adaboost_train(X, y, k, min_size=1, max_depth=1, epsilon=1e-8):
             given each of the decision tree predictions
     """
     # TODO: implement this
-    return None, None
+    
+    weights = np.ones(len(y))/len(y)
+    trees = []
+    alphas = []
+    
+    def weighted_error(y_pred, y, weights):
+        if weights is None:
+            weights = np.ones(len(y))/len(y)
+        
+        indicator = [1 if y[i] != y_pred[i] else 0 for i in range(len(y))]    
+        err = np.dot(weights, indicator)
+
+        return err
+    
+    for t in range(k):
+        trees.append(decision_tree_train(X, y, None, weights, min_size, 0, max_depth))
+        print(trees[-1])
+        #y_pred = np.array([c0 if X[i, feature] >= thresh else c1 for i in range(len(X)) for i in range(len(X))])
+        y_pred = decision_tree_predict(trees[-1], X)
+                
+        error = weighted_error(y_pred, y, weights)
+        if error < epsilon:
+            alphas.append(1)
+            break
+        
+        alphas.append(np.log((1-error)/error))
+        
+        weights = weights * np.exp(alphas[-1] * (y_pred != y))
+        
+        weights = weights/np.sum(weights)
+        
+    return trees, alphas
 
 
 def adaboost_predict(trees, alphas, X):
@@ -259,7 +449,17 @@ def adaboost_predict(trees, alphas, X):
         y: the predicted labels
     """
     # TODO: implement this
-    return None
+
+    y_pred = []
+    for t in range(len(trees)):
+        pred = decision_tree_predict(trees[t], X)
+        pred[pred == 0] = -1
+        
+        y_pred.append(pred)
+        
+    y_pred = np.sum(y_pred, axis = 0)
+    
+    return np.array([1 if alphas[t] * y_pred[i] > 0 else 0 for i in range(len(y_pred))])
 
 
 # TEST DRIVER
