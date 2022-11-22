@@ -192,21 +192,21 @@ def gradient_descent(z, loss_func, grad_func, lr=0.01,
     """
     # TODO: implement this
     
-    losses = [loss_func(z)]
+    losses = [ loss_func(z) ]
+    zs = [ z ]
     
-    zs = [z]
+    d_loss = np.inf
+    d_z = np.inf    
+
+    while (len(losses) <= max_iter) and (d_loss > loss_stop) and (d_z > z_stop):
+        zs.append(zs[-1] - lr * grad_func(zs[-1]))
+        losses.append(loss_func(zs[-1]))
+        
+        d_loss = np.abs(losses[-2] - losses[-1])
+        d_z = np.linalg.norm(zs[-2] - zs[-1])
     
-    iter = 0 
-    z_change = lr*grad_func(z) 
-    
-    while (np.linalg.norm(z_change) > z_stop) and (iter < max_iter) and (np.abs(losses[-1]) > loss_stop):
-        z_change = lr*grad_func(z) 
-        z = z - z_change
-        zs.append(z)
-        losses.append(loss_func(z))
-        iter +=1
-    
-    return zs, losses
+    return zs[1:], losses[1:]
+
 
 
 # -- Question 4 --

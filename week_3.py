@@ -416,7 +416,7 @@ def adaboost_train(X, y, k, min_size=1, max_depth=1, epsilon=1e-8):
     
     for t in range(k):
         trees.append(decision_tree_train(X, y, None, weights, min_size, 0, max_depth))
-        print(trees[-1])
+        
         #y_pred = np.array([c0 if X[i, feature] >= thresh else c1 for i in range(len(X)) for i in range(len(X))])
         y_pred = decision_tree_predict(trees[-1], X)
                 
@@ -448,18 +448,11 @@ def adaboost_predict(trees, alphas, X):
     # Returns
         y: the predicted labels
     """
-    # TODO: implement this
-
-    y_pred = []
-    for t in range(len(trees)):
-        pred = decision_tree_predict(trees[t], X)
-        pred[pred == 0] = -1
-        
-        y_pred.append(pred)
-        
-    y_pred = np.sum(y_pred, axis = 0)
     
-    return np.array([1 if alphas[t] * y_pred[i] > 0 else 0 for i in range(len(y_pred))])
+    preds = np.array([ decision_tree_predict( tree, X ) for tree in trees ]).T * 2 - 1
+    weighted = preds @ alphas
+    
+    return (weighted >= 0).astype(int)
 
 
 # TEST DRIVER
