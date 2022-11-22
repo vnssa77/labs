@@ -18,6 +18,7 @@ able to complete those functions, please talk to the TAs to get a working versio
 """
 
 import sys, os, os.path
+sys.path.insert(1, '/Users/vrodr/github_repos/labs')
 import argparse
 
 import numpy as np
@@ -26,7 +27,7 @@ import matplotlib.pyplot as plt
 
 import utils
 
-from week_1_working import generate_noisy_linear, generate_linearly_separable
+from week_1 import generate_noisy_linear, generate_linearly_separable
 
 #### ADD YOUR CODE BELOW
 
