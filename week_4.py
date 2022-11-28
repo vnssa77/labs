@@ -58,8 +58,15 @@ def generate_margined_binary_data ( num_samples, count, limits, rng ):
               num_samples x count
         y: a vector of num_samples binary labels
     """
-    # TODO: implement this
-    return None, None
+    
+    size = round(num_samples/2)
+    group0 = rng.uniform(-5,0, size = (size, count))
+    group1 = rng.uniform(0, 5, size = (num_samples-size, count))
+    
+    X = np.vstack([group0, group1])
+    y = [0 if i < num_samples/2 else 1 for i in range(num_samples)]
+    
+    return X, y
 
 
 def geometric_margin ( X, y, weights, bias ):
@@ -89,8 +96,11 @@ def geometric_margin ( X, y, weights, bias ):
     assert(X.shape[0] == len(y))
     assert(X.shape[1] == len(weights))
     
-    # TODO: implement this
-    return None
+    y = np.array(y) * 2 - 1
+
+    M = y@(utils.affine(X, weights) + bias)/np.linalg.norm(weights)
+    
+    return M
     
 
 # -- Question 2 --
@@ -121,8 +131,33 @@ def perceptron_train ( X, y, alpha=1, max_epochs=50, include_bias=True ):
     """
     assert(X.shape[0] == len(y))
     
-    # TODO: implement this
-    return None
+    def misclassification(y, y_pred):
+        return y.all() != y_pred.all()
+
+    epochs = 0
+    error = True
+    y = np.array(y)
+    y_pred = np.empty(len(X))
+    if include_bias:
+        X = utils.add_x0(X)
+    weights = np.zeros(np.shape(X)[1])
+    
+    
+    while epochs <= max_epochs and error == True:
+        
+        for i in range(len(X)):
+            
+            if utils.affine(X[i,:], weights) >= 0:
+                y_pred[i] = 1
+            else:
+                y_pred[i] = 0
+            
+            weights = weights + alpha*(y[i] - y_pred[i])*X[i,:]
+        
+        epochs += 1
+        
+        error = misclassification(y, y_pred)    
+    return weights
 
 
 def perceptron_predict ( test_X, weights ):
@@ -148,8 +183,10 @@ def perceptron_predict ( test_X, weights ):
     """
     assert(test_X.shape[1] in (len(weights),len(weights)-1))
     
-    # TODO: implement this
-    return None
+    pred = utils.affine(test_X, weights)
+    pred_y = np.array([1 if pred[i] >= 0 else 0 for i in range(len(test_X))])
+    
+    return pred_y
     
 
 # -- Question 3 --
@@ -177,8 +214,10 @@ def generate_binary_nonlinear_2d ( num_samples, limits, rng ):
               num_samples x count
         y: a vector of num_samples binary labels
     """
-    # TODO: implement this
-    return None, None
+    
+    X = rng.uniform(-5,5,size = (num_samples, 2))
+    y = [1 if X[i,0]**2 + X[i,1]**2 >= 9 else 0 for i in range(len(X))]
+    return X, y
 
 
 # -- Question 4 --
@@ -206,8 +245,14 @@ def custom_kernel ( X1, X2, gamma=0.5 ):
     """
     assert(X1.shape[1] == X2.shape[1])
     
-    # TODO: implement this
-    return None
+    if gamma is None:
+        gamma = 1 / (X1.shape[1] * X1.var())
+        
+    result = np.zeros((X1.shape[0], X2.shape[0]))
+    for x1 in range(X1.shape[0]):
+        for x2 in range(X2.shape[0]):
+            result[x1,x2] = np.exp(-gamma * np.max(np.abs(X1[x1,:] - X2[x2,:]))**2)
+    return result
 
 
 #### TEST DRIVER

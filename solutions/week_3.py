@@ -15,6 +15,8 @@ want. You should not need to edit the driver code, though you can if you wish.
 """
 
 import sys, os, os.path
+sys.path.insert(1, '/Users/vrodr/github_repos/labs')
+
 import argparse
 import pprint
 
