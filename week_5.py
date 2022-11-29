@@ -46,13 +46,8 @@ def relu(z):
             as the input value, giving the ReLU of
             of each input value
     """
-    def reluFunc(z):
-        if z > 0:
-            return z
-        else:
-            return 0
-
-    return np.array(list(map(reluFunc, z)))
+    
+    return np.maximum(0, z)
 
 
 def d_relu(z):
@@ -67,13 +62,7 @@ def d_relu(z):
             as the input value, giving the gradient
             of the ReLU function at each input value
     """
-    def d_reluFunc(z):
-        if z > 0:
-            return 1
-        else:
-            return 0
-        
-    return np.array(list(map(d_reluFunc, z)))
+    return (z > 0).astype(z.dtype)
 
 
 def sigmoid(z):
@@ -127,7 +116,7 @@ def binary_crossentropy_loss(y, y_hat, eps=1e-10):
             the same shape as y_hat irrespective of the
             shape of y
     """
-
+    y = y.reshape(y_hat.shape)
     return -(y*np.log(y_hat + eps) + (1-y)*np.log(1-y_hat + eps))
 
 
@@ -151,6 +140,7 @@ def d_binary_crossentropy_loss(y, y_hat, eps=1e-10):
             the same shape as y_hat irrespective of the
             shape of y
     """
+    y = y.reshape(y_hat.shape)
     return (y_hat - y)/((y_hat)*(1-y_hat) + eps)
 
 
@@ -173,8 +163,11 @@ def init_layer(fan_in, fan_out, act, rng):
             keys 'W', 'b', 'shape' and 'act'.
             (See the coursework for full details.)
     """
-    W = np.random.uniform(low = -np.sqrt(6/fan_in), high= np.sqrt(6/fan_in), size = (fan_in, fan_out))
-    return None
+    
+    W = np.random.uniform(low=-np.sqrt(6/fan_in),
+                          high=np.sqrt(6/fan_in), size=(fan_in, fan_out))
+    b = np.zeros(fan_out)
+    return {'W': W, 'b': b, 'act': act, 'shape': f'{fan_in}->{fan_out}'}
 
 
 def init_mlp(spec, rng):
@@ -195,9 +188,12 @@ def init_mlp(spec, rng):
         mlp: a list of layer dicts
     """
     assert (len(spec) > 1)
+    mlp = []
 
-    # TODO: implement this
-    return None
+    for s in range(len(spec)-1):
+        mlp.append(init_layer(spec[s][0], spec[s+1][0], spec[s][1], rng))
+
+    return mlp
 
 
 # -- Question 3 --
@@ -221,8 +217,13 @@ def layer_forward(layer, X):
     """
     assert (X.shape[-1] == layer['W'].shape[0])
 
-    # TODO: implement this
-    return None
+    Z = X@layer['W'] + layer['b']
+
+    act = layer['act']
+    A = sigmoid(Z) if layer['act']=='sigmoid' else relu(Z)
+    layer.update({'X': X, 'Z': Z, 'A': A})
+
+    return A
 
 
 def mlp_forward(mlp, X):
@@ -239,8 +240,12 @@ def mlp_forward(mlp, X):
     # Returns
         A: the output activations of the final network layer
     """
-    # TODO: implement this
-    return None
+
+    A = X
+    for layer in mlp:
+        A = layer_forward(layer, A)
+
+    return A
 
 
 # -- Question 4 --
@@ -263,8 +268,17 @@ def layer_backward(layer, dA):
     """
     assert (dA.shape == layer['A'].shape)
 
-    # TODO: implement this
-    return None
+    Z = layer['Z']
+    X = layer['X']
+    W = layer['W']
+
+    dZ = dA * (d_sigmoid(Z) if layer['act']=='sigmoid' else d_relu(Z))
+    dX = dZ@W.T
+    dW = X.T@dZ
+    db = np.sum(dZ, axis=0)
+
+    layer.update({'dA': dA, 'dZ': dZ, 'dW': dW, 'db': db, 'dX': dX})
+    return dX
 
 
 def mlp_backward(mlp, d_loss):
@@ -281,8 +295,10 @@ def mlp_backward(mlp, d_loss):
     # Returns
         None
     """
-    # TODO: implement this
-    pass
+
+    dA = d_loss
+    for layer in mlp[::-1]:
+        dA = layer_backward(layer, dA)
 
 
 # -- Question 5 --
@@ -300,9 +316,9 @@ def layer_update(layer, lr):
     # Returns
         None
     """
-    # TODO: implement this
-    pass
 
+    layer['W'] = layer['W'] - lr * layer['dW']
+    layer['b'] = layer['b'] - lr * layer['db']
 
 def mlp_update(mlp, lr):
     """
@@ -317,8 +333,8 @@ def mlp_update(mlp, lr):
     # Returns
         None
     """
-    # TODO: implement this
-    pass
+    for layer in mlp:
+        layer_update(layer, lr)
 
 
 # -- Question 6 --
@@ -343,8 +359,13 @@ def mlp_minibatch(mlp, X, y, lr):
     assert (X.shape[0] == len(y))
     assert (X.shape[-1] == mlp[0]['W'].shape[0])
 
-    # TODO: implement this
-    return None
+    y_hat = mlp_forward(mlp, X)
+    loss = binary_crossentropy_loss(y, y_hat)
+    d_loss = d_binary_crossentropy_loss(y, y_hat)
+    mlp_backward(mlp, d_loss)
+    mlp_update(mlp, lr)
+    
+    return np.sum(loss)/len(y)
 
 
 def mlp_epoch(mlp, X, y, batch, lr, rng):
@@ -367,8 +388,15 @@ def mlp_epoch(mlp, X, y, batch, lr, rng):
     # Returns
         loss: the mean training loss over the whole dataset    
     """
-    # TODO: implement this
-    return None
+    N = len(y)
+    loss = []
+    perm = rng.permutation( N )
+
+    for start in range(0, N, batch):
+        ix = perm[start:(start + batch)]
+        loss.append(mlp_minibatch(mlp, X[ix,:], y[ix], lr))
+    
+    return np.mean(loss)
 
 
 def mlp_train(mlp, X, y, batch, epochs, lr, rng):
@@ -392,8 +420,10 @@ def mlp_train(mlp, X, y, batch, epochs, lr, rng):
     # Returns
         loss: a list of the mean training loss at each epoch    
     """
-    # TODO: implement this
-    return None
+    loss = []
+    for i in range(epochs):
+        loss.append(mlp_epoch(mlp, X, y, batch, lr, rng))
+    return loss
 
 
 # -- Question 7 --
@@ -412,8 +442,12 @@ def mlp_predict(mlp, X, thresh=0.5):
     # Returns
         y_hat: a vector of predicted binary labels for X
     """
-    # TODO: implement this
-    return None
+    
+    A = mlp_forward(mlp, X)
+
+    y_hat = 1 * (A>=0.5)
+
+    return y_hat
 
 
 # TEST DRIVER
@@ -537,6 +571,7 @@ if __name__ == '__main__':
         print(f'Q3-6: training MLP for {args.epochs} epochs')
         t0 = perf_counter()
         loss = mlp_train(nn, X, y, args.batch, args.epochs, args.lr, rng)
+
         if loss is None:
             print('Not implemented')
             utils.plot_unimplemented(axs[1, 0], 'Training Loss')
