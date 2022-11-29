@@ -55,8 +55,6 @@ def ridge_closed(X, y, l2=0):
     """
     assert (len(X.shape) == 2)
     assert (X.shape[0] == len(y))
-
-    # TODO: implement this
     
     I = np.identity(X.shape[1]) 
  
@@ -88,7 +86,6 @@ def monomial_projection_1d(X, degree):
     assert (len(X.shape) == 2)
     assert (X.shape[1] == 1)
 
-    # TODO: implement this
     y = np.arange(0, degree + 1)
     yy, xx = np.meshgrid(y, X)
     
@@ -121,7 +118,7 @@ def generate_noisy_poly_1d(num_samples, weights, sigma, limits, rng):
               num_samples x 1
         y: a vector of num_samples output values
     """
-    # TODO: implement this
+
     noise =  rng.normal(scale = sigma, size = num_samples)
     X  = rng.uniform(limits[0], limits[1], num_samples).reshape(-1,1)
     
@@ -151,7 +148,6 @@ def fit_poly_1d(X, y, degree, l2=0):
     assert (X.shape[1] == 1)
     assert (X.shape[0] == len(y))
 
-    # TODO: implement this
     Xm = monomial_projection_1d(X, degree)
     w = ridge_closed(Xm, y, l2)
        
@@ -190,7 +186,7 @@ def gradient_descent(z, loss_func, grad_func, lr=0.01,
         zs: a list of the z values at each iteration
         losses: a list of the losses at each iteration
     """
-    # TODO: implement this
+
     
     losses = [ loss_func(z) ]
     zs = [ z ]
@@ -240,7 +236,6 @@ def logistic_regression(X, y, w0=None, lr=0.05,
     assert (len(X.shape) == 2)
     assert (X.shape[0] == len(y))
 
-    # TODO: implement this
     n=len(X)
     
     if w0 is None:

@@ -99,7 +99,6 @@ def plot_noisy_linear_1d(axes, num_samples, weights, sigma, limits, rng):
     assert (len(weights) == 2)
     x, y = generate_noisy_linear(num_samples, weights, sigma, limits, rng)
 
-    # TODO: do the plotting
     axes.plot(x, y, marker='o', linestyle=' ', color='red')
     from sklearn.linear_model import LinearRegression
 
@@ -177,7 +176,7 @@ def generate_linearly_separable(num_samples, weights, limits, rng):
               num_samples x (len(weights) - 1)
         y: a vector of num_samples binary labels
     """
-    # TODO: implement this
+
     num_features = len(weights) - 1
     x = rng.uniform(low=limits[0], high=limits[1],
                     size=(num_samples, num_features))
@@ -263,8 +262,6 @@ def random_search(function, count, num_samples, limits, rng):
     # Returns
         x: a vector of length count, containing the found features
     """
-
-    # TODO: implement this
     X = rng.uniform(low=limits[0], high=limits[1], size=(num_samples, count))
     y = function(X)
     
@@ -334,7 +331,6 @@ def plot_searches_2d(axes, function, limits, resolution,
         None
     """
 
-    # TODO: implement this
     rndMin = random_search(function, 2, num_samples, limits, rng)
     gridMin = grid_search(function, 2, num_divisions, limits)
     

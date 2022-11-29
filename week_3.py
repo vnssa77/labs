@@ -249,7 +249,6 @@ def decision_tree_train(X, y, cls=None, weights=None,
             'below' : a nested tree for when feature < thresh (decision)
             'above' : a nested tree for when feature >= thresh (decision)
     """
-    # TODO: implement this
 
     """     data = X
         labels = y
@@ -343,8 +342,6 @@ def random_forest_train(X, y, k, rng, min_size=3, max_depth=10):
     # Returns:
         forest: a list of tree dicts as returned by decision_tree_train
     """
-
-    # TODO: implement this
     forest = []
     for i in range(k):
         indices = rng.choice(np.arange(len(X)), size = len(X))
@@ -399,7 +396,6 @@ def adaboost_train(X, y, k, min_size=1, max_depth=1, epsilon=1e-8):
         alphas: a vector of weights indicating how much credence to
             given each of the decision tree predictions
     """
-    # TODO: implement this
     
     weights = np.ones(len(y))/len(y)
     trees = []
