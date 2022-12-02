@@ -309,7 +309,7 @@ class RNN(Model):
         # Returns
             output tensor from the last layer
         """
-        # TODO: remove line below and implement this
+        
         return super().forward(X)
 
 

@@ -18,7 +18,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from scipy.spatial import distance
 
-##### !!! DO NOT CHANGE THESE !!!
+# !!! DO NOT CHANGE THESE !!!
 GAUSSIAN_DIM = 2
 N_PCA = 2
 #####
@@ -150,8 +150,35 @@ def compute_wcss(data, centroids, assignments):
     # Returns:
         wcss: the WCSS across all clusters.
     """
-    # TODO: implement the within cluster sum of squares
-    return None
+
+    """     squared_error = []
+    k = np.shape(centroids)[0]
+
+    for i in range(k):
+        s = data[np.where(assignments == i)]
+        
+        squared_error.append(np.mean([np.linalg.norm(x-centroids[i]) for x in s]))
+
+    return np.mean(squared_error) """
+    centroid_means = np.zeros(len(centroids))
+
+    for i in range(len(centroid_means)):
+        assigned = data[assignments == i]
+
+        if len(assigned) > 0:
+            centroid_cp = np.repeat(
+                np.expand_dims(centroids[i], axis=0), len(assigned), axis=0
+            )
+            
+            centroid_means[i] = np.sum(
+                np.linalg.norm(centroid_cp - assigned, axis=1) ** 2
+            ) / len(assigned)
+        else:
+            centroid_means[i] = 0
+
+    wcss = np.mean(centroid_means)
+
+    return wcss
 
 
 def k_means_clustering(data, rng, k=3, init="forgy", max_iter=500):
@@ -171,9 +198,53 @@ def k_means_clustering(data, rng, k=3, init="forgy", max_iter=500):
         n_iter: the number of iterations needed by the algorithm.
         centroids: the centroids after convergence.
     """
-    # TODO: implement the k-means clustering algorithm
-    return None, None, None
+    if init == "forgy":
+        centroids = rng.choice(data, k, replace=False)
+    else:
+        centroids = rng.uniform(low=min(data), high=max(data), size= (k, data.shape[1]))
+    
+    wcss = [np.inf, 100000]
+    n_iter = 0
+    assignments = np.zeros(len(data), dtype= int)
+     
+    while n_iter <= max_iter and wcss[-1]!= wcss[-2]:
+        for i in range(len(data)):
+            dist = [np.linalg.norm(data[i] - c) for c in centroids]
+            assignments[i] = np.argmin(dist)
+                
+        wcss.append(compute_wcss(data, centroids, assignments))
+        centroids = [np.mean(data[np.where(assignments == K)], axis = 0) for K in range(k)]
+        n_iter += 1
+        print(f"WCSS for iter {n_iter}:\t{wcss[-1]:.5f}")
 
+    return assignments, n_iter, centroids
+"""     assignments = np.zeros(data.shape[0])
+    converged = False
+    n_iter = 0
+    while not converged and n_iter < max_iter:
+        converged = True
+        n_iter += 1
+
+        for i, sample in enumerate(data):
+            c = np.argmin(
+                np.linalg.norm(
+                    np.repeat(np.expand_dims(sample, axis=0), k, axis=0) - centroids,
+                    axis=1,
+                )
+                ** 2
+            )
+
+            converged &= assignments[i] == c
+            assignments[i] = c
+
+        for i in range(k):
+            centroids[i] = np.nanmean(data[assignments == i], axis=0)
+
+        wcss = compute_wcss(data, centroids, assignments)
+        print(f"WCSS for iter {n_iter}:\t{wcss:.5f}")
+
+    return assignments, n_iter, centroids
+ """
 
 def image_colour_quantisation(img, k, max_iter, rng):
     """
@@ -192,8 +263,20 @@ def image_colour_quantisation(img, k, max_iter, rng):
             sequentialised image after the colour channels C have
             been assigned to the k clusters using the k-means algorithm.
     """
-    # TODO: implement image colour quantisation using the k-means algorithm.
-    return None
+    """     img_seq = img.reshape(-1, img.shape[-1]).copy()
+    assignments, n_iter, centroids = k_means_clustering(img_seq, rng, k, "forgy", max_iter)
+    print(np.shape(assignments), np.shape(img_seq))
+    C = np.array([centroids[i] for i in assignments])
+
+    return C """
+    img_seq = img.reshape(-1, img.shape[-1]).copy()
+    assignments, _, centroids = k_means_clustering(img_seq, rng, k=k, max_iter=max_iter)
+
+    for idx, i in enumerate(assignments):
+        img_seq[idx] = centroids[int(i)]
+
+    return img_seq
+
 
 
 def load_word_embeddings(path):
@@ -235,8 +318,17 @@ def get_nearest_neighbours(query, embeddings, labels, n=10):
             for query (INCLUDING query itself).
     """
     assert query in labels, print(f"No embedding for word {query}")
-    # TODO: find the nearest neighbours for word 'query' in 'embeddings'
-    return None
+    
+    idx = labels.index(query)
+    
+    embed = embeddings[idx]
+    
+    neighbours = np.argsort([distance.cosine(embed, e) for e in embeddings])[:n-1]
+    neighbours = np.append(neighbours, idx).tolist()
+
+    nearest = [labels[i] for i in neighbours]
+
+    return nearest
 
 
 def pca_eigen(data, n):
@@ -251,9 +343,17 @@ def pca_eigen(data, n):
         The transformed data, truncated at n along the
             second dimension (shape (N, n)).
     """
-    # TODO: transform the input data using PCA and
-    # return only the n principal components
-    return None
+    
+    data = data - np.mean(data, axis = 0)
+    cov = (1/n)*(data.T@data)
+    
+    values, vectors = np.linalg.eig(cov)
+    idx = values.argsort()[::-1]
+    U = vectors[idx[0:n]].T
+    
+    X = data@U    
+
+    return X
 
 
 def pca_svd(data, n):
@@ -270,7 +370,13 @@ def pca_svd(data, n):
     """
     # TODO: transform the input data using PCA and
     # return only the n principal components
-    return None
+    
+    data = data - np.mean(data, axis = 0)
+    u, s, v = np.linalg.svd(data)
+    
+    X = data@v[0:n].T
+    
+    return X
 
 
 def pca(data, method="eigen", n_pcs=2):
@@ -326,7 +432,8 @@ def plot_pca(axes, data, labels, selection, rng, method, n):
 
 
 def process_args():
-    ap = argparse.ArgumentParser(description="week 7 coursework script for COMP0088")
+    ap = argparse.ArgumentParser(
+        description="week 7 coursework script for COMP0088")
 
     ap.add_argument(
         "--n_samples",
@@ -416,7 +523,8 @@ if __name__ == "__main__":
         mean_shifts=mean_shifts, n_samples=args.n_samples
     )
 
-    plot_gaussian_data(axs[0, 0], k_means_data, rng, args.n_samples, n_gaussians)
+    plot_gaussian_data(axs[0, 0], k_means_data, rng,
+                       args.n_samples, n_gaussians)
 
     print(
         f"k-means clustering (k={args.n_clusters}) with {args.k_means_init} initialisation"
@@ -442,7 +550,8 @@ if __name__ == "__main__":
 
     img_seq = image_colour_quantisation(img, args.n_clusters_q, args.max_iter_q, rng)
 
-    axs[1, 1].set_title(f"The quantised image (k={args.n_clusters_q})", fontsize=14)
+    axs[1, 1].set_title(
+        f"The quantised image (k={args.n_clusters_q})", fontsize=14)
     axs[1, 1].imshow(img_seq.reshape(img.shape))
 
     print("Loading pre-trained GloVe embeddings...")
@@ -456,6 +565,7 @@ if __name__ == "__main__":
 
     print("Compute PCA with eigendecomposition")
     pca_embeddings = pca(embeddings, method="eigen")
+
     plot_pca(axs[2, 0], pca_embeddings, words, selection, rng, "eigen", N_PCA)
 
     print("Compute PCA with SVD")
