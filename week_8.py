@@ -148,7 +148,7 @@ def gaussian_mix_E_step(X, means, covs, class_probs):
     """
     assert (len(means) == len(covs) == len(class_probs))
 
-    resps = np.empty((len(X), np.shape(means)[1]))
+    resps = np.empty((len(X), np.shape(means)[0]))
 
     for i in range(len(X)):
         resps_i = [mvn.pdf(X[i], means[j], covs[j])*class_probs[j]
@@ -284,8 +284,20 @@ def generate_hmm_sequence(num_samples,
         x: a vector of observations for each time step
         z: a vector of hidden state (indices) for each time step
     """
-    # TODO: implement this
-    return None, None
+    z = []
+    x = []
+    
+    for i in range(num_samples):
+        if i == 0:
+            z.append(rng.choice(len(transitions), size = 1, p = initial_probs))
+        else:
+            state = z[-1]
+            z.append(rng.choice(len(transitions), size = 1, p = transitions[state].ravel()))
+
+        state = z[-1]
+        x.append(mvn.rvs(emission_means[state], emission_sds[state]**2, 1))
+    
+    return np.array(x), np.array(z)
 
 
 # -- Question 4 --
