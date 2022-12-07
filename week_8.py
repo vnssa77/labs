@@ -72,7 +72,7 @@ def generate_gaussian_mix(num_samples, means, covs,
             they were drawn
     """
     assert (len(means) == len(covs) == len(class_probs))
-
+    
     num_features = np.shape(means)[1]
     X = np.empty((num_samples, num_features))
 
@@ -154,7 +154,7 @@ def gaussian_mix_E_step(X, means, covs, class_probs):
         resps_i = [mvn.pdf(X[i], means[j], covs[j])*class_probs[j]
                    for j in range(len(class_probs))]
         resps_i = resps_i/np.linalg.norm(resps_i, ord=1)
-        
+
         resps[i] = resps_i
     return resps
 
@@ -186,22 +186,23 @@ def gaussian_mix_M_step(X, resps):
     """
     means = []
     covs = []
-    
+
     class_probs = np.mean(resps, axis=0)
-    
+
     for jj in range(resps.shape[1]):
         mu = np.zeros(X.shape[1])
         sig = np.zeros((X.shape[1], X.shape[1]))
-        
+
         for ii in range(X.shape[0]):
-            mu += resps[ii,jj] * X[ii,:] / np.sum(resps[:,jj])
-        
+            mu += resps[ii, jj] * X[ii, :] / np.sum(resps[:, jj])
+
         for ii in range(X.shape[0]):
-            sig += resps[ii,jj] * np.outer(X[ii,:] - mu,X[ii,:] - mu) / np.sum(resps[:,jj])
-        
+            sig += resps[ii, jj] * \
+                np.outer(X[ii, :] - mu, X[ii, :] - mu) / np.sum(resps[:, jj])
+
         means.append(mu)
         covs.append(sig)
-    
+
     return means, covs, class_probs
 
 
@@ -236,25 +237,25 @@ def fit_gaussian_mix(X, num_gaussians, rng, max_iter=10,
     """
     num_features = np.shape(X)[1]
     means_idx = rng.choice(X.shape[0], num_gaussians, replace=False)
-    means = [ X[ii,:] for ii in means_idx ]
-    covs = [ np.eye(X.shape[1]) for ii in means_idx ]
+    means = [X[ii, :] for ii in means_idx]
+    covs = [np.eye(X.shape[1]) for ii in means_idx]
     class_probs = np.ones(num_gaussians)/num_gaussians
-    
+
     prev = -np.inf
     logliks = []
     iter = 0
-    
+
     while iter < max_iter:
         resps = gaussian_mix_E_step(X, means, covs, class_probs)
         means, covs, class_probs = gaussian_mix_M_step(X, resps)
         logliks.append(gaussian_mix_loglik(X, means, covs, class_probs))
-        
+
         if logliks[-1] - prev < loglik_stop:
             print('loglik convergence criteria met')
             break
         prev = logliks[-1]
         iter += 1
-        
+
     return resps, means, covs, class_probs, logliks
 
 
@@ -286,17 +287,18 @@ def generate_hmm_sequence(num_samples,
     """
     z = []
     x = []
-    
+
     for i in range(num_samples):
         if i == 0:
-            z.append(rng.choice(len(transitions), size = 1, p = initial_probs))
+            z.append(rng.choice(len(transitions), size=1, p=initial_probs))
         else:
             state = z[-1]
-            z.append(rng.choice(len(transitions), size = 1, p = transitions[state].ravel()))
+            z.append(rng.choice(len(transitions), size=1,
+                     p=transitions[state].ravel()))
 
         state = z[-1]
-        x.append(mvn.rvs(emission_means[state], emission_sds[state]**2, 1))
-    
+        x.append(mvn.rvs(emission_means[state], emission_sds[state], 1))
+
     return np.array(x), np.array(z)
 
 
@@ -319,8 +321,34 @@ def viterbi(x, initial_probs, transitions, emission_means, emission_sds):
     # Returns
         z: a vector of predicted hidden state (indices) for each time step
     """
-    # TODO: implement this
-    return None
+    K, T = len(initial_probs), len(x)
+    trell_a = np.zeros ((K, T))
+    trell_z = np.zeros ((K, T), dtype=int)
+    
+    # init first column
+    for jj in range(K):
+        trell_a[jj, 0] = initial_probs[jj] * norm.pdf(x[0], loc=emission_means[jj], scale=emission_sds[jj])
+    
+    trell_a[:,0] /= np.sum(trell_a[:,0])
+    
+    # forward pass
+    for ii in range(1, T):
+        for jj in range(K):
+            px = norm.pdf(x[ii], loc=emission_means[jj], scale=emission_sds[jj])
+            aa = [ px * trell_a[pj,ii-1] * transitions[pj,jj] for pj in range(K) ]
+            trell_a[jj, ii] = np.max(aa)
+            trell_z[jj, ii] = np.argmax(aa)
+        
+        # normalise to avoid vanishing
+        trell_a[:,ii] /= np.sum(trell_a[:,ii])
+    
+    # walk back to get the sequence
+    z = np.zeros(T, dtype=int)
+    z[-1] = np.argmax(trell_a[:,-1])
+    for ii in range(T-2, 0, -1):
+        z[ii] = trell_z[z[ii+1], ii+1]
+    
+    return z
 
 
 # TEST DRIVER
